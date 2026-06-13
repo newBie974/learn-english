@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mes mots d'anglais</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--canvas:#F4F2FB;--card:#FFF;--ink:#221C3D;--muted:#6E6890;--primary:#5B4B9E;--primary-soft:#EEEAFA;
+--known:#1F9E84;--known-soft:#E1F4EF;--again:#E27A66;--again-soft:#FBE9E4;--line:#E7E2F4;
+--shadow:0 18px 40px -22px rgba(40,28,90,.45);--radius:24px;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:'DM Sans',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;min-height:100%;
+background:radial-gradient(1200px 600px at 90% -10%,#EFE7FF 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#E6F3FF 0,transparent 55%),var(--canvas);
+padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+.app{max-width:520px;margin:0 auto;padding:22px 18px 40px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+.brand .dot{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#8C6FE0);box-shadow:var(--shadow);display:grid;place-items:center;color:#fff;font-family:Fraunces,serif;font-size:17px}
+.brand small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.ghost-btn{border:1px solid var(--line);background:#fff;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:8px 12px;border-radius:999px;cursor:pointer}
+.ghost-btn:hover{color:var(--primary);border-color:var(--primary-soft)}
+.hero{margin:18px 0 22px}
+.hero h1{font-family:Fraunces,serif;font-weight:600;font-size:30px;line-height:1.1;letter-spacing:-.02em}
+.hero p{color:var(--muted);margin-top:8px;font-size:15px}
+.cta{width:100%;border:none;cursor:pointer;font:inherit;color:#fff;font-weight:700;font-size:17px;background:linear-gradient(135deg,var(--primary),#7A5FCB);padding:20px;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;transition:transform .12s}
+.cta:hover{transform:translateY(-2px)}.cta:disabled{background:#fff;color:var(--muted);box-shadow:none;border:1px dashed var(--line);cursor:default}
+.cta .count{background:rgba(255,255,255,.22);padding:4px 12px;border-radius:999px;font-size:14px}.cta:disabled .count{background:var(--primary-soft);color:var(--primary)}
+.section-label{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:26px 4px 12px}
+.decks{display:flex;flex-direction:column;gap:10px}
+.deck{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);width:100%;transition:border-color .12s,transform .12s}
+.deck:hover{border-color:var(--primary);transform:translateY(-1px)}
+.deck .emoji{font-family:Fraunces,serif;font-size:20px;font-weight:600;color:var(--primary);width:42px;height:42px;display:grid;place-items:center;background:var(--primary-soft);border-radius:12px;flex:none}
+.deck .meta{flex:1;min-width:0}.deck .meta b{font-weight:600;font-size:15px;display:block}.deck .meta span{font-size:12.5px;color:var(--muted)}
+.deck .ring{flex:none;font-size:12px;font-weight:700;color:var(--primary)}
+.bar{height:6px;background:var(--primary-soft);border-radius:99px;overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--primary),#9A82E6);border-radius:99px}
+.screen{flex:1;display:flex;flex-direction:column}
+.study-top{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.progress{flex:1;height:8px;background:#fff;border:1px solid var(--line);border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--primary);transition:width .3s}
+.remain{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
+.stage{flex:1;display:flex;align-items:center;justify-content:center;perspective:1400px;padding:6px 0 20px}
+.flip{width:100%;max-width:420px;aspect-ratio:5/6;position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.2,.8,.2,1);cursor:pointer}.flip.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px;text-align:center}
+.face.back{transform:rotateY(180deg);background:linear-gradient(180deg,#fff,#FBFAFF)}
+.tag{position:absolute;top:18px;left:18px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.pos{position:absolute;top:18px;right:18px;font-size:11px;font-weight:600;color:var(--primary);background:var(--primary-soft);padding:3px 9px;border-radius:99px}
+.word{font-family:Fraunces,serif;font-weight:600;font-size:clamp(34px,10vw,52px);line-height:1.05;letter-spacing:-.02em}
+.hint{margin-top:16px;color:var(--muted);font-size:14px}.flip-hint{position:absolute;bottom:20px;font-size:12.5px;color:var(--muted);opacity:.8}
+.tr{font-family:Fraunces,serif;font-size:clamp(24px,7vw,36px);font-weight:600;color:var(--primary);line-height:1.15;max-width:320px}
+.auto{margin-top:14px;font-size:11.5px;color:var(--muted);background:#F3F1F8;padding:4px 10px;border-radius:99px}
+.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ans{border:none;cursor:pointer;font:inherit;font-weight:700;font-size:15px;padding:18px;border-radius:18px;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .1s}
+.ans:hover{transform:translateY(-2px)}.ans small{font-weight:500;font-size:11.5px;opacity:.8}
+.ans.again{background:var(--again-soft);color:#B24A36}.ans.known{background:var(--known-soft);color:#13745F}.answers.hidden{visibility:hidden}
+.done{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+.done .big{font-size:54px}.done h2{font-family:Fraunces,serif;font-weight:600;font-size:26px;margin-top:6px}.done p{color:var(--muted);font-size:15px;max-width:280px}
+.done .stats{display:flex;gap:22px;margin:18px 0 8px}.done .stats div{text-align:center}.done .stats b{font-family:Fraunces,serif;font-size:26px;display:block;color:var(--primary)}.done .stats span{font-size:12px;color:var(--muted)}
+.guide h2{font-family:Fraunces,serif;font-weight:600;font-size:24px;margin:14px 0 6px}.guide h3{font-size:15px;margin:20px 0 6px;color:var(--primary)}
+.guide p,.guide li{font-size:14.5px;color:var(--ink);line-height:1.55}.guide ul{margin:6px 0 0 18px}.guide li{margin-bottom:6px}.guide a{color:var(--primary);font-weight:600}
+.link{background:none;border:none;color:var(--primary);font:inherit;font-weight:600;cursor:pointer;padding:0;margin-top:24px;display:inline-flex;gap:6px;align-items:center}
+.footer{text-align:center;color:var(--muted);font-size:11.5px;margin-top:28px;line-height:1.5}.hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){.flip,.cta,.deck,.ans{transition:none}}
+:focus-visible{outline:3px solid #B9A8F0;outline-offset:2px;border-radius:8px}
+</style></head>
+<body><div class="app">
+<div class="topbar"><div class="brand"><span class="dot">a</span><span>Mes mots d'anglais<small>3000 mots, un peu chaque jour</small></span></div>
+<button class="ghost-btn" id="navBtn">Programme</button></div>
+
+<div id="home" class="screen">
+  <div class="hero"><h1 id="greet">Bonjour</h1><p id="subline"></p></div>
+  <button class="cta" id="reviewBtn"><span id="reviewLabel">Réviser mes mots</span><span class="count" id="dueCount">0</span></button>
+  <div class="section-label">Apprendre de nouveaux mots</div>
+  <div class="decks" id="deckList"></div>
+  <div class="footer" id="homeFooter"></div>
+</div>
+
+<div id="study" class="screen hidden">
+  <div class="study-top"><button class="ghost-btn" id="quitBtn">← Quitter</button><div class="progress"><i id="progressBar" style="width:0%"></i></div><span class="remain" id="remain">0</span></div>
+  <div class="stage"><div class="flip" id="flip" role="button" tabindex="0" aria-label="Carte. Appuie pour voir la traduction.">
+    <div class="face front"><span class="tag" id="frontTag">Anglais</span><span class="pos" id="frontPos"></span><div class="word" id="frontWord">—</div><div class="hint" id="frontHint">Tu connais ce mot ?</div><div class="flip-hint">Touche la carte pour la réponse</div></div>
+    <div class="face back"><span class="tag">Français</span><div class="tr" id="backTr">—</div><div class="auto hidden" id="autoTag">traduction auto — à confirmer</div></div>
+  </div></div>
+  <div class="answers hidden" id="answers"><button class="ans again" id="againBtn">À revoir<small>je l'ai oublié</small></button><button class="ans known" id="knownBtn">Je savais<small>facile</small></button></div>
+</div>
+
+<div id="done" class="screen hidden"><div class="done"><div class="big" id="doneEmoji">🌱</div><h2 id="doneTitle">Bien joué !</h2><p id="doneText"></p>
+  <div class="stats"><div><b id="statSeen">0</b><span>vus</span></div><div><b id="statKnown">0</b><span>sus</span></div><div><b id="statTotal">0</b><span>appris en tout</span></div></div>
+  <button class="cta" style="max-width:300px" id="doneHome">Revenir à l'accueil</button></div></div>
+
+<div id="guide" class="screen hidden"><div class="guide">
+  <h2>Comment progresser vite</h2>
+  <p>Cette app contient les <b>3000 mots anglais les plus utiles</b>, rangés du plus fréquent au moins fréquent en 6 paliers de 500. Les premiers paliers couvrent l'immense majorité de l'anglais de tous les jours — apprends-les dans l'ordre.</p>
+  <h3>La routine qui marche</h3>
+  <ul><li><b>Chaque jour :</b> « Réviser mes mots », puis 5 à 10 nouveaux mots dans le palier en cours.</li>
+  <li>Sois honnête : « À revoir » dès que tu hésites. C'est comme ça que le mot revient et qu'il rentre.</li>
+  <li>Avance palier par palier, sans te presser.</li></ul>
+  <h3>Pour t'immerger (gratuit)</h3>
+  <ul><li><b>BBC Learning English</b> — podcast « 6 Minute English ».</li>
+  <li><b>YouTube / séries en VO</b> avec sous-titres anglais.</li>
+  <li><a href="https://www.newgeneralservicelist.org/" target="_blank" rel="noopener">newgeneralservicelist.org</a> — la liste de référence des mots utiles.</li></ul>
+  <h3>Bon à savoir</h3>
+  <p>Les 1500 premiers mots sont traduits et vérifiés à la main. Au-delà, certaines traductions viennent d'un dictionnaire automatique et portent la mention « à confirmer ».</p>
+  <p>Tes progrès sont enregistrés dans ce navigateur, sur cet appareil. Pas de compte, rien à installer.</p>
+  <button class="link" id="guideBack">← Retour à l'accueil</button>
+</div></div>
+</div>
+<script>
+let WORDS=[];
+let VERBS=[];
+
+// cartes — construit après le fetch des données
+let BYID={},DECKS=[];
+function buildDecks(){
+WORDS.forEach(w=>w.id=w.en);
+VERBS.forEach(v=>{v.id="verb_"+v.en;v.pos="verbe";v.verb=true;});
+BYID={}; WORDS.forEach(w=>BYID[w.id]=w); VERBS.forEach(v=>BYID[v.id]=v);
+const PALIERS=[];
+for(let l=1;l<=6;l++){PALIERS.push({id:"p"+l,label:l,name:"Palier "+l,sub:(l*500-499)+" → "+(l*500)+" e mot",words:WORDS.filter(w=>w.lvl===l)});}
+DECKS=[...PALIERS,{id:"verbs",label:"⏪",name:"Verbes au passé",sub:"bonus — verbes irréguliers",words:VERBS,verb:true}];
+}
+
+const store=(()=>{let mem={},ok=true;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");}catch(e){ok=false;}
+return{get(k){try{return ok?localStorage.getItem(k):(mem[k]??null);}catch(e){return mem[k]??null;}},
+set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}};})();
+const KEY="mesmots.srs.v2";
+let SRS=JSON.parse(store.get(KEY)||"{}");
+const save=()=>store.set(KEY,JSON.stringify(SRS));
+const DAY=86400000,INT={1:1,2:2,3:4,4:8,5:16,6:32},NEW=8;
+const isDue=id=>{const r=SRS[id];return r&&r.due<=Date.now();};
+const isSeen=id=>!!SRS[id];
+const totalLearned=()=>Object.values(SRS).filter(r=>r.box>=3).length;
+const dueCount=()=>Object.keys(SRS).filter(isDue).length;
+const deckSeen=d=>d.words.filter(w=>isSeen(w.id)).length;
+
+let queue=[],session={};let flipped=false;
+const $=s=>document.querySelector(s);
+const screens={home:$("#home"),study:$("#study"),done:$("#done"),guide:$("#guide")};
+const show=n=>Object.entries(screens).forEach(([k,el])=>el.classList.toggle("hidden",k!==n));
+
+function renderHome(){
+  const h=new Date().getHours();
+  $("#greet").textContent=h<6?"Bonne nuit 🌙":h<12?"Bonjour ☀️":h<18?"Bon après-midi 👋":"Bonne soirée 🌆";
+  const due=dueCount(),btn=$("#reviewBtn");
+  if(due>0){$("#reviewLabel").textContent="Réviser mes mots";$("#dueCount").textContent=due;btn.disabled=false;}
+  else{$("#reviewLabel").textContent="Rien à réviser pour l'instant 🎉";$("#dueCount").textContent="0";btn.disabled=true;}
+  const learned=totalLearned();
+  $("#subline").textContent=learned>0?`${learned} mot${learned>1?'s':''} bien ancré${learned>1?'s':''}. On continue ?`:"Les 3000 mots les plus utiles, du plus simple au plus rare. Commence par le palier 1.";
+  const list=$("#deckList");list.innerHTML="";
+  DECKS.forEach(d=>{
+    const seen=deckSeen(d),tot=d.words.length,pct=Math.round(seen/tot*100);
+    const el=document.createElement("button");el.className="deck";
+    el.innerHTML=`<span class="emoji">${d.label}</span><span class="meta"><b>${d.name}</b><span>${seen}/${tot} mots découverts</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="ring">${pct}%</span>`;
+    el.onclick=()=>startDeck(d);list.appendChild(el);
+  });
+  $("#homeFooter").innerHTML="3000 mots · les 1500 premiers vérifiés à la main · progression sur cet appareil<br>Fait avec ❤️";
+  show("home");
+}
+function startReview(){queue=Object.keys(SRS).filter(isDue).sort((a,b)=>SRS[a].due-SRS[b].due);begin();}
+function startDeck(d){
+  const dueD=d.words.filter(w=>isDue(w.id)).map(w=>w.id);
+  const fresh=d.words.filter(w=>!isSeen(w.id)).slice(0,NEW).map(w=>w.id);
+  queue=[...dueD,...fresh];
+  if(!queue.length)queue=d.words.slice(0,NEW).map(w=>w.id);
+  begin();
+}
+function begin(){session={seen:new Set(),known:0,total:queue.length};if(!queue.length){renderHome();return;}show("study");next();}
+function next(){
+  if(!queue.length){finish();return;}
+  flipped=false;$("#flip").classList.remove("flipped");$("#answers").classList.add("hidden");
+  const w=BYID[queue[0]];
+  $("#frontTag").textContent=w.verb?"Verbe — au passé ?":"Anglais";
+  $("#frontWord").textContent=w.en;
+  $("#frontPos").textContent=w.pos&&w.pos!=="autre"?w.pos:"";
+  $("#frontHint").textContent=w.verb?"Comment se dit-il au passé ?":"Tu connais ce mot ?";
+  $("#backTr").textContent=w.fr;
+  $("#autoTag").classList.toggle("hidden",w.src!=="auto");
+  const done=session.total-queue.length;
+  $("#progressBar").style.width=Math.round(done/session.total*100)+"%";
+  $("#remain").textContent=queue.length+" restant"+(queue.length>1?"s":"");
+}
+function doFlip(){if(flipped)return;flipped=true;$("#flip").classList.add("flipped");$("#answers").classList.remove("hidden");}
+function answer(known){
+  if(!flipped)return;
+  const id=queue.shift(),r=SRS[id]||{box:0,due:0};
+  if(known){r.box=Math.min((r.box||0)+1,6);r.due=Date.now()+(INT[r.box]||32)*DAY;session.known++;}
+  else{r.box=1;r.due=Date.now()+INT[1]*DAY;queue.push(id);}
+  SRS[id]=r;session.seen.add(id);save();next();
+}
+function finish(){
+  const seen=session.seen.size,known=session.known,ratio=seen?known/seen:0;
+  $("#statSeen").textContent=seen;$("#statKnown").textContent=known;$("#statTotal").textContent=totalLearned();
+  if(ratio>=.8){$("#doneEmoji").textContent="🌟";$("#doneTitle").textContent="Excellent !";$("#doneText").textContent="Presque tout maîtrisé. Reviens demain pour ancrer ces mots.";}
+  else if(ratio>=.4){$("#doneEmoji").textContent="🌿";$("#doneTitle").textContent="Belle session !";$("#doneText").textContent="Les mots hésitants reviendront bientôt — c'est comme ça qu'ils rentrent.";}
+  else{$("#doneEmoji").textContent="🌱";$("#doneTitle").textContent="C'est un début !";$("#doneText").textContent="Tu viens de planter des graines. Reviens demain, tu seras surprise.";}
+  show("done");
+}
+$("#reviewBtn").onclick=startReview;
+$("#quitBtn").onclick=()=>{save();renderHome();};
+$("#flip").onclick=doFlip;
+$("#flip").onkeydown=e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();doFlip();}};
+$("#againBtn").onclick=()=>answer(false);
+$("#knownBtn").onclick=()=>answer(true);
+$("#doneHome").onclick=renderHome;
+$("#navBtn").onclick=()=>show("guide");
+$("#guideBack").onclick=renderHome;
+document.addEventListener("keydown",e=>{
+  if(screens.study.classList.contains("hidden"))return;
+  if(!flipped&&(e.code==="Space"||e.code==="Enter")){e.preventDefault();doFlip();return;}
+  if(flipped){if(e.code==="ArrowLeft"||e.key==="r"){e.preventDefault();answer(false);}if(e.code==="ArrowRight"||e.code==="Enter"){e.preventDefault();answer(true);}}
+});
+(async function boot(){
+  try{
+    const [w,v]=await Promise.all([
+      fetch("data/words.json").then(r=>r.json()),
+      fetch("data/verbs.json").then(r=>r.json())
+    ]);
+    WORDS=w;VERBS=v;
+  }catch(e){
+    console.error(e);
+    $("#subline").textContent="Impossible de charger les mots — lance un serveur HTTP (voir CLAUDE.md), pas en file://.";
+    return;
+  }
+  buildDecks();
+  renderHome();
+})();
+</script></body></html>
