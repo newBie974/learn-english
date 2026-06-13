@@ -62,6 +62,19 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
 .footer{text-align:center;color:var(--muted);font-size:11.5px;margin-top:28px;line-height:1.5}.hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){.flip,.cta,.deck,.ans{transition:none}}
 :focus-visible{outline:3px solid #B9A8F0;outline-offset:2px;border-radius:8px}
+.stage{flex:0 0 auto;padding:10px 0 18px}
+.qcard{width:100%;max-width:420px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:30px 26px;text-align:center;position:relative;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:flex;align-items:center;gap:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-size:16px;text-align:left;padding:15px 16px;border-radius:16px;cursor:pointer;transition:transform .1s,border-color .12s,background .12s}
+.choice:hover{border-color:var(--primary);transform:translateY(-1px)}
+.choice .num{flex:none;width:26px;height:26px;border-radius:8px;background:var(--primary-soft);color:var(--primary);font-size:13px;font-weight:700;display:grid;place-items:center}
+.choice .lab{flex:1;font-family:Fraunces,serif;font-weight:600}
+.choices.locked .choice{cursor:default}.choices.locked .choice:hover{transform:none;border-color:var(--line)}
+.choices.locked .choice.correct:hover{border-color:var(--known)}.choices.locked .choice.wrong:hover{border-color:var(--again)}
+.choice.correct{background:var(--known-soft);border-color:var(--known);color:#13745F}.choice.correct .num{background:var(--known);color:#fff}
+.choice.wrong{background:var(--again-soft);border-color:var(--again);color:#B24A36}.choice.wrong .num{background:var(--again);color:#fff}
+.choice.dim{opacity:.4}
+.cta.continue{margin-top:14px}
 </style></head>
 <body><div class="app">
 <div class="topbar"><div class="brand"><span class="dot">a</span><span>Mes mots d'anglais<small>3000 mots, un peu chaque jour</small></span></div>
@@ -77,11 +90,9 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
 
 <div id="study" class="screen hidden">
   <div class="study-top"><button class="ghost-btn" id="quitBtn">← Quitter</button><div class="progress"><i id="progressBar" style="width:0%"></i></div><span class="remain" id="remain">0</span></div>
-  <div class="stage"><div class="flip" id="flip" role="button" tabindex="0" aria-label="Carte. Appuie pour voir la traduction.">
-    <div class="face front"><span class="tag" id="frontTag">Anglais</span><span class="pos" id="frontPos"></span><div class="word" id="frontWord">—</div><div class="hint" id="frontHint">Tu connais ce mot ?</div><div class="flip-hint">Touche la carte pour la réponse</div></div>
-    <div class="face back"><span class="tag">Français</span><div class="tr" id="backTr">—</div><div class="auto hidden" id="autoTag">traduction auto — à confirmer</div></div>
-  </div></div>
-  <div class="answers hidden" id="answers"><button class="ans again" id="againBtn">À revoir<small>je l'ai oublié</small></button><button class="ans known" id="knownBtn">Je savais<small>facile</small></button></div>
+  <div class="stage"><div class="qcard"><span class="tag" id="frontTag">Anglais</span><span class="pos" id="frontPos"></span><div class="word" id="frontWord">—</div><div class="hint" id="frontHint">Quelle est la traduction ?</div></div></div>
+  <div class="choices" id="choices"></div>
+  <button class="cta continue hidden" id="continueBtn">Continuer<span class="count">→</span></button>
 </div>
 
 <div id="done" class="screen hidden"><div class="done"><div class="big" id="doneEmoji">🌱</div><h2 id="doneTitle">Bien joué !</h2><p id="doneText"></p>
@@ -93,7 +104,7 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
   <p>Cette app contient les <b>3000 mots anglais les plus utiles</b>, rangés du plus fréquent au moins fréquent en 6 paliers de 500. Les premiers paliers couvrent l'immense majorité de l'anglais de tous les jours — apprends-les dans l'ordre.</p>
   <h3>La routine qui marche</h3>
   <ul><li><b>Chaque jour :</b> « Réviser mes mots », puis 5 à 10 nouveaux mots dans le palier en cours.</li>
-  <li>Sois honnête : « À revoir » dès que tu hésites. C'est comme ça que le mot revient et qu'il rentre.</li>
+  <li>Choisis la bonne traduction parmi 3. Un mot raté revient vite dans la pile — c'est comme ça qu'il rentre.</li>
   <li>Avance palier par palier, sans te presser.</li></ul>
   <h3>Pour t'immerger (gratuit)</h3>
   <ul><li><b>BBC Learning English</b> — podcast « 6 Minute English ».</li>
@@ -133,7 +144,7 @@ const totalLearned=()=>Object.values(SRS).filter(r=>r.box>=3).length;
 const dueCount=()=>Object.keys(SRS).filter(isDue).length;
 const deckSeen=d=>d.words.filter(w=>isSeen(w.id)).length;
 
-let queue=[],session={};let flipped=false;
+let queue=[],session={};let answered=false;
 const $=s=>document.querySelector(s);
 const screens={home:$("#home"),study:$("#study"),done:$("#done"),guide:$("#guide")};
 const show=n=>Object.entries(screens).forEach(([k,el])=>el.classList.toggle("hidden",k!==n));
@@ -165,27 +176,52 @@ function startDeck(d){
   begin();
 }
 function begin(){session={seen:new Set(),known:0,total:queue.length};if(!queue.length){renderHome();return;}show("study");next();}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function distractors(w){
+  const pool=w.verb?VERBS:WORDS,seen=new Set([w.fr]),out=[];
+  const same=shuffle(pool.filter(x=>x.id!==w.id&&x.fr&&x.pos===w.pos&&!seen.has(x.fr)));
+  const any=shuffle(pool.filter(x=>x.id!==w.id&&x.fr&&!seen.has(x.fr)));
+  for(const x of [...same,...any]){if(out.length>=2)break;if(seen.has(x.fr))continue;seen.add(x.fr);out.push(x.fr);}
+  return out;
+}
 function next(){
   if(!queue.length){finish();return;}
-  flipped=false;$("#flip").classList.remove("flipped");$("#answers").classList.add("hidden");
+  answered=false;
   const w=BYID[queue[0]];
   $("#frontTag").textContent=w.verb?"Verbe — au passé ?":"Anglais";
   $("#frontWord").textContent=w.en;
   $("#frontPos").textContent=w.pos&&w.pos!=="autre"?w.pos:"";
-  $("#frontHint").textContent=w.verb?"Comment se dit-il au passé ?":"Tu connais ce mot ?";
-  $("#backTr").textContent=w.fr;
-  $("#autoTag").classList.toggle("hidden",w.src!=="auto");
+  $("#frontHint").textContent=w.verb?"Sa forme au passé ?":"Quelle est la traduction ?";
+  const opts=shuffle([w.fr,...distractors(w)]);
+  const box=$("#choices");box.innerHTML="";box.classList.remove("locked");
+  opts.forEach((tr,i)=>{
+    const b=document.createElement("button");b.type="button";b.className="choice";
+    b.innerHTML='<span class="num">'+(i+1)+'</span><span class="lab"></span>';
+    b.querySelector(".lab").textContent=tr;
+    b.onclick=()=>choose(b,tr,w);box.appendChild(b);
+  });
+  $("#continueBtn").classList.add("hidden");
   const done=session.total-queue.length;
   $("#progressBar").style.width=Math.round(done/session.total*100)+"%";
   $("#remain").textContent=queue.length+" restant"+(queue.length>1?"s":"");
 }
-function doFlip(){if(flipped)return;flipped=true;$("#flip").classList.add("flipped");$("#answers").classList.remove("hidden");}
-function answer(known){
-  if(!flipped)return;
+function choose(btn,tr,w){
+  if(answered)return;answered=true;
+  const ok=tr===w.fr,box=$("#choices");box.classList.add("locked");
+  [...box.children].forEach(b=>{
+    const lab=b.querySelector(".lab").textContent;
+    if(lab===w.fr)b.classList.add("correct");
+    else if(b===btn)b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  grade(ok);
+  const cb=$("#continueBtn");cb.classList.remove("hidden");cb.focus();
+}
+function grade(known){
   const id=queue.shift(),r=SRS[id]||{box:0,due:0};
   if(known){r.box=Math.min((r.box||0)+1,6);r.due=Date.now()+(INT[r.box]||32)*DAY;session.known++;}
   else{r.box=1;r.due=Date.now()+INT[1]*DAY;queue.push(id);}
-  SRS[id]=r;session.seen.add(id);save();next();
+  SRS[id]=r;session.seen.add(id);save();
 }
 function finish(){
   const seen=session.seen.size,known=session.known,ratio=seen?known/seen:0;
@@ -197,17 +233,14 @@ function finish(){
 }
 $("#reviewBtn").onclick=startReview;
 $("#quitBtn").onclick=()=>{save();renderHome();};
-$("#flip").onclick=doFlip;
-$("#flip").onkeydown=e=>{if(e.code==="Space"||e.code==="Enter"){e.preventDefault();doFlip();}};
-$("#againBtn").onclick=()=>answer(false);
-$("#knownBtn").onclick=()=>answer(true);
+$("#continueBtn").onclick=next;
 $("#doneHome").onclick=renderHome;
 $("#navBtn").onclick=()=>show("guide");
 $("#guideBack").onclick=renderHome;
 document.addEventListener("keydown",e=>{
   if(screens.study.classList.contains("hidden"))return;
-  if(!flipped&&(e.code==="Space"||e.code==="Enter")){e.preventDefault();doFlip();return;}
-  if(flipped){if(e.code==="ArrowLeft"||e.key==="r"){e.preventDefault();answer(false);}if(e.code==="ArrowRight"||e.code==="Enter"){e.preventDefault();answer(true);}}
+  if(!answered){const n=parseInt(e.key,10);if(n>=1&&n<=3){e.preventDefault();const b=$("#choices").children[n-1];if(b)b.click();}return;}
+  if(e.code==="Enter"||e.code==="Space"){e.preventDefault();next();}
 });
 (async function boot(){
   try{
