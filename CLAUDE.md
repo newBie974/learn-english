@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 dans le `localStorage` du navigateur de l'utilisateur.
 
 Page unique, statique, déployable telle quelle sur **GitHub Pages**. Aucune étape de build :
-`index.html` `fetch()` ses données depuis `data/`.
+`app.js` `fetch()` ses données depuis `data/`.
 
 ## Source de vérité unique : `data/`
 
@@ -21,23 +21,40 @@ Page unique, statique, déployable telle quelle sur **GitHub Pages**. Aucune ét
   - `pos` — nature (`verbe`, `nom`, `préposition`, `article`, `pronom`, `adjectif`…).
   - `src` — `main` = vérifié à la main ; `auto` = généré (affiche un petit badge en carte).
   - `lvl` — palier **1 à 6** : 500 mots par palier (1 = les 500 premiers, …, 6 = 2501→3000).
-- `data/verbs.json` — **le deck des verbes irréguliers** (liste exhaustive, ~170). Chaque
-  entrée : `{ en, fr, tr }` où `en` est l'infinitif (la question), `fr` = `"prétérit ·
-  participe passé"` (la réponse à apprendre, ex. `"went · gone"`), `tr` = le sens français
-  (indice, ex. `"aller"`).
+- `data/verbs.json` — **le deck des verbes irréguliers** (~170). Chaque entrée :
+  `{ en, fr, tr }` où `en` est l'infinitif, `fr` = `"prétérit · participe passé"`,
+  `tr` = le sens français (indice).
+- `data/phrasal.json` — **phrasal verbs** `{ en, fr }`. Deck QCM, rubrique Grammaire.
+- `data/expressions.json` — **expressions courantes** `{ en, fr }`. Deck QCM, rubrique Grammaire.
+- `data/sentences.json` — **phrases à trou** `{ id, text (un seul ___), answer, options (3, dont answer), tr? }`.
+  Exercice cloze, rubrique S'entraîner.
 
-Tout le reste (`index.html`) ne fait que **lire** ces deux fichiers. Pour ajouter ou corriger
-des mots, on édite ces JSON — jamais le HTML.
+Tout le reste ne fait que **lire** ces fichiers. Pour ajouter ou corriger du contenu,
+on édite ces JSON — jamais le HTML ou le JS.
 
-## Modèle de cartes & paliers
+## Modèle de decks & rubriques
 
-`index.html` construit les decks au démarrage (`buildDecks()`) :
-- 6 **paliers** = `words.json` filtré par `lvl` (1→6), 500 mots chacun.
-- 1 deck **Verbes irréguliers** = `verbs.json` (question = infinitif, réponse = prétérit ·
-  participe passé, indice = sens FR).
+L'accueil est rangé en **3 rubriques** : `Vocabulaire`, `Grammaire`, `S'entraîner`.
 
-Les `id` sont les mots eux-mêmes (`w.en`), préfixés `verb_` pour les verbes. Le scoring de
-mémorisation se fait **par `id`** dans le `localStorage`.
+Les decks sont déclarés dans `DECK_DEFS` (`app.js`) avec les champs :
+`{ id, data, label, name, rubrique, type, kind, tag?, sub }`.
+- `type` vaut `qcm` ou `cloze`.
+- `kind` vaut `word | verb | phrasal | expr | cloze`.
+- Les 6 **paliers** (rubrique Vocabulaire) sont générés depuis `words.json` filtrés par `lvl` —
+  ils ne sont pas dans `DECK_DEFS` mais construits directement dans `buildDecks()`.
+
+## Architecture JS
+
+- `index.html` = coquille : `<head>`, `<style>`, markup des écrans, balises `<script>`.
+- `app.js` = cœur : store/SRS, chargement des données, construction des decks, accueil par
+  rubriques, file de session, moteur QCM, routeur `next()` qui aiguille selon le `type`
+  de l'item (qcm → écran `#study`, cloze → `window.clozeShow()`), et `window.App` qui
+  expose la logique partagée (`show`, `shuffle`, `grade`, `next`, `save`, `home`,
+  `setProgress`, `answered`, `setAnswered`).
+- `cloze.js` = exercice « compléter une phrase » (tap-to-place les options ; consomme
+  `window.App`). Définit `window.clozeShow`.
+
+**Zéro build** : les `<script>` sont chargés dans l'ordre `app.js` puis `cloze.js`.
 
 ## Révision espacée (SRS)
 
@@ -48,7 +65,12 @@ Système de Leitner, 6 boîtes. État stocké sous la clé `localStorage` **`mes
 - Intervalles `INT` (jours) : `{1:1, 2:2, 3:4, 4:8, 5:16, 6:32}`. `NEW=8` nouvelles cartes
   par session de deck. Un mot est « ancré » dès `box>=3`.
 
-Toute évolution des règles SRS se fait dans `index.html` (un seul endroit, côté client).
+**Conventions d'`id`** : mot = `w.en` (le mot lui-même), `verb_*` (verbes irréguliers),
+`ph_*` (phrasal verbs), `ex_*` (expressions), `cloze_*` (phrases à trou).
+
+La file « Réviser mes mots » mélange tous les types d'items et route chacun vers son écran
+(QCM ou cloze) selon le `type` du deck correspondant.
+
 **Ne pas changer la clé `localStorage`** sans migration : ça effacerait la progression des
 utilisateurs.
 
@@ -60,19 +82,18 @@ Aucune étape de build. Le `fetch()` exige un serveur HTTP (pas `file://`) :
 python3 -m http.server 8000   # puis ouvrir http://localhost:8000
 ```
 
-Vérifier l'intégrité des données :
+Valider l'intégrité de tous les `data/*.json` :
 
 ```bash
-python3 -c "import json; d=json.load(open('data/words.json')); \
-print(len(d),'mots ;', sorted({w['lvl'] for w in d}),'paliers')"
+node tools/validate-data.mjs
 ```
 
 ## Déploiement
 
-`index.html` + `data/` à la racine → **GitHub Pages** (servir depuis la racine de la branche).
-Mettre à jour le contenu = éditer `data/*.json` puis commit : la page se rafraîchit sans
-rebuild. Le `localStorage` des utilisateurs survit aux déploiements tant que la clé
-`mesmots.srs.v2` ne change pas.
+`index.html` + `app.js` + `cloze.js` + `data/` à la racine → **GitHub Pages** (servir depuis
+la racine de la branche). Mettre à jour le contenu = éditer `data/*.json` puis commit :
+la page se rafraîchit sans rebuild. Le `localStorage` des utilisateurs survit aux déploiements
+tant que la clé `mesmots.srs.v2` ne change pas.
 
 ## Source des mots
 
