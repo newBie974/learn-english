@@ -6,6 +6,7 @@ const RUBRIQUES=["Vocabulaire","Grammaire","S'entraîner"];
 const DECK_DEFS=[
   {id:"verbs", data:"verbs", label:"⏪", name:"Verbes irréguliers", rubrique:"Grammaire", type:"qcm", kind:"verb", tag:"Verbe irrégulier", sub:d=>"les "+d.words.length+" verbes · prétérit & participe passé"},
   {id:"phrasal", data:"phrasal", label:"🧩", name:"Phrasal verbs", rubrique:"Grammaire", type:"qcm", kind:"phrasal", tag:"Phrasal verb", sub:d=>d.words.length+" verbes à particule"},
+  {id:"expr", data:"expressions", label:"💬", name:"Expressions", rubrique:"Grammaire", type:"qcm", kind:"expr", tag:"Expression", sub:d=>d.words.length+" expressions courantes"},
 ];
 
 function deckIdFor(kind,w){
