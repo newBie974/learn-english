@@ -5,6 +5,7 @@ const RUBRIQUES=["Vocabulaire","Grammaire","S'entraîner"];
 // kind: word | verb | phrasal | expr | cloze ; type: qcm | cloze
 const DECK_DEFS=[
   {id:"verbs", data:"verbs", label:"⏪", name:"Verbes irréguliers", rubrique:"Grammaire", type:"qcm", kind:"verb", tag:"Verbe irrégulier", sub:d=>"les "+d.words.length+" verbes · prétérit & participe passé"},
+  {id:"phrasal", data:"phrasal", label:"🧩", name:"Phrasal verbs", rubrique:"Grammaire", type:"qcm", kind:"phrasal", tag:"Phrasal verb", sub:d=>d.words.length+" verbes à particule"},
 ];
 
 function deckIdFor(kind,w){
