@@ -1,15 +1,24 @@
-let WORDS=[];
-let VERBS=[];
+let WORDS=[],VERBS=[];
+let BYID={},DECKS=[],DECK_BY_ID={};
 
-// cartes — construit après le fetch des données
-let BYID={},DECKS=[];
 function buildDecks(){
-WORDS.forEach(w=>w.id=w.en);
-VERBS.forEach(v=>{v.id="verb_"+v.en;v.pos="verbe";v.verb=true;});
-BYID={}; WORDS.forEach(w=>BYID[w.id]=w); VERBS.forEach(v=>BYID[v.id]=v);
-const PALIERS=[];
-for(let l=1;l<=6;l++){PALIERS.push({id:"p"+l,label:l,name:"Palier "+l,sub:(l*500-499)+" → "+(l*500)+" e mot",words:WORDS.filter(w=>w.lvl===l)});}
-DECKS=[...PALIERS,{id:"verbs",label:"⏪",name:"Verbes irréguliers",sub:"les "+VERBS.length+" verbes · prétérit & participe passé",words:VERBS,verb:true}];
+  BYID={};DECK_BY_ID={};
+  const paliers=[];
+  for(let l=1;l<=6;l++){
+    paliers.push({id:"p"+l,label:l,name:"Palier "+l,rubrique:"Vocabulaire",type:"qcm",kind:"word",
+      sub:(l*500-499)+" → "+(l*500)+" e mot",words:WORDS.filter(w=>w.lvl===l)});
+  }
+  const verbsDeck={id:"verbs",label:"⏪",name:"Verbes irréguliers",rubrique:"Grammaire",type:"qcm",kind:"verb",
+    sub:"les "+VERBS.length+" verbes · prétérit & participe passé",words:VERBS};
+  DECKS=[...paliers,verbsDeck];
+  DECKS.forEach(deck=>{
+    DECK_BY_ID[deck.id]=deck;
+    deck.words.forEach(w=>{
+      w.id = deck.kind==="verb" ? "verb_"+w.en : w.en;
+      w.deckId=deck.id; w.kind=deck.kind;
+      BYID[w.id]=w;
+    });
+  });
 }
 
 const store=(()=>{let mem={},ok=true;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");}catch(e){ok=false;}
@@ -59,7 +68,7 @@ function startDeck(d){
 function begin(){session={seen:new Set(),known:0,total:queue.length};if(!queue.length){renderHome();return;}show("study");next();}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function distractors(w){
-  const pool=w.verb?VERBS:WORDS,seen=new Set([w.fr]),out=[];
+  const pool=DECK_BY_ID[w.deckId].words,seen=new Set([w.fr]),out=[];
   const same=shuffle(pool.filter(x=>x.id!==w.id&&x.fr&&x.pos===w.pos&&!seen.has(x.fr)));
   const any=shuffle(pool.filter(x=>x.id!==w.id&&x.fr&&!seen.has(x.fr)));
   for(const x of [...same,...any]){if(out.length>=2)break;if(seen.has(x.fr))continue;seen.add(x.fr);out.push(x.fr);}
@@ -69,11 +78,11 @@ function next(){
   if(!queue.length){finish();return;}
   answered=false;
   const w=BYID[queue[0]];
-  $("#frontTag").textContent=w.verb?"Verbe irrégulier":"Anglais";
+  $("#frontTag").textContent=w.kind==="verb"?"Verbe irrégulier":"Anglais";
   $("#frontWord").textContent=w.en;
-  const posTxt=w.verb?"":(w.pos&&w.pos!=="autre"?w.pos:"");
+  const posTxt=w.kind==="word"&&w.pos&&w.pos!=="autre"?w.pos:"";
   $("#frontPos").textContent=posTxt;$("#frontPos").classList.toggle("hidden",!posTxt);
-  $("#frontHint").textContent=w.verb?((w.tr?w.tr+" — ":"")+"prétérit · participe passé ?"):"Quelle est la traduction ?";
+  $("#frontHint").textContent=w.kind==="verb"?((w.tr?w.tr+" — ":"")+"prétérit · participe passé ?"):"Quelle est la traduction ?";
   const opts=shuffle([w.fr,...distractors(w)]);
   const box=$("#choices");box.innerHTML="";box.classList.remove("locked");
   opts.forEach((tr,i)=>{
