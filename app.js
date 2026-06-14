@@ -1,6 +1,20 @@
 let WORDS=[],VERBS=[];
 let BYID={},DECKS=[],DECK_BY_ID={};
 
+const RUBRIQUES=["Vocabulaire","Grammaire","S'entraîner"];
+// kind: word | verb | phrasal | expr | cloze ; type: qcm | cloze
+const DECK_DEFS=[
+  {id:"verbs", data:"verbs", label:"⏪", name:"Verbes irréguliers", rubrique:"Grammaire", type:"qcm", kind:"verb", tag:"Verbe irrégulier", sub:d=>"les "+d.words.length+" verbes · prétérit & participe passé"},
+];
+
+function deckIdFor(kind,w){
+  if(kind==="verb")return "verb_"+w.en;
+  if(kind==="phrasal")return "ph_"+w.en;
+  if(kind==="expr")return "ex_"+w.en;
+  if(kind==="cloze")return "cloze_"+w.id;
+  return w.en;
+}
+
 function buildDecks(){
   BYID={};DECK_BY_ID={};
   const paliers=[];
@@ -8,14 +22,15 @@ function buildDecks(){
     paliers.push({id:"p"+l,label:l,name:"Palier "+l,rubrique:"Vocabulaire",type:"qcm",kind:"word",
       sub:(l*500-499)+" → "+(l*500)+" e mot",words:WORDS.filter(w=>w.lvl===l)});
   }
-  const verbsDeck={id:"verbs",label:"⏪",name:"Verbes irréguliers",rubrique:"Grammaire",type:"qcm",kind:"verb",
-    sub:"les "+VERBS.length+" verbes · prétérit & participe passé",words:VERBS};
-  DECKS=[...paliers,verbsDeck];
+  const defDecks=DECK_DEFS.map(def=>{
+    const words=(DATA[def.data]||[]).slice();
+    return {...def, sub: typeof def.sub==="function"?def.sub({words}):def.sub, words};
+  }).filter(d=>d.words.length);
+  DECKS=[...paliers,...defDecks];
   DECKS.forEach(deck=>{
     DECK_BY_ID[deck.id]=deck;
     deck.words.forEach(w=>{
-      w.id = deck.kind==="verb" ? "verb_"+w.en : w.en;
-      w.deckId=deck.id; w.kind=deck.kind;
+      w.id=deckIdFor(deck.kind,w); w.deckId=deck.id; w.kind=deck.kind;
       BYID[w.id]=w;
     });
   });
@@ -48,11 +63,16 @@ function renderHome(){
   const learned=totalLearned();
   $("#subline").textContent=learned>0?`${learned} mot${learned>1?'s':''} bien ancré${learned>1?'s':''}. On continue ?`:"Les 3000 mots les plus utiles, du plus simple au plus rare. Commence par le palier 1.";
   const list=$("#deckList");list.innerHTML="";
-  DECKS.forEach(d=>{
-    const seen=deckSeen(d),tot=d.words.length,pct=Math.round(seen/tot*100);
-    const el=document.createElement("button");el.className="deck";
-    el.innerHTML=`<span class="emoji">${d.label}</span><span class="meta"><b>${d.name}</b><span>${seen}/${tot} mots découverts</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="ring">${pct}%</span>`;
-    el.onclick=()=>startDeck(d);list.appendChild(el);
+  RUBRIQUES.forEach(rub=>{
+    const decks=DECKS.filter(d=>d.rubrique===rub);
+    if(!decks.length)return;
+    const h=document.createElement("div");h.className="section-label";h.textContent=rub;list.appendChild(h);
+    decks.forEach(d=>{
+      const seen=deckSeen(d),tot=d.words.length,pct=tot?Math.round(seen/tot*100):0;
+      const el=document.createElement("button");el.className="deck";
+      el.innerHTML=`<span class="emoji">${d.label}</span><span class="meta"><b>${d.name}</b><span>${seen}/${tot} découverts</span><span class="bar"><i style="width:${pct}%"></i></span></span><span class="ring">${pct}%</span>`;
+      el.onclick=()=>startDeck(d);list.appendChild(el);
+    });
   });
   $("#homeFooter").innerHTML="3000 mots · les 1500 premiers vérifiés à la main · progression sur cet appareil<br>Fait avec ❤️";
   show("home");
@@ -78,7 +98,8 @@ function next(){
   if(!queue.length){finish();return;}
   answered=false;
   const w=BYID[queue[0]];
-  $("#frontTag").textContent=w.kind==="verb"?"Verbe irrégulier":"Anglais";
+  const deck=DECK_BY_ID[w.deckId];
+  $("#frontTag").textContent=w.kind==="verb"?"Verbe irrégulier":(deck.tag||"Anglais");
   $("#frontWord").textContent=w.en;
   const posTxt=w.kind==="word"&&w.pos&&w.pos!=="autre"?w.pos:"";
   $("#frontPos").textContent=posTxt;$("#frontPos").classList.toggle("hidden",!posTxt);
@@ -133,13 +154,13 @@ document.addEventListener("keydown",e=>{
   if(!answered){const n=parseInt(e.key,10);if(n>=1&&n<=3){e.preventDefault();const b=$("#choices").children[n-1];if(b)b.click();}return;}
   if(e.code==="Enter"||e.code==="Space"){e.preventDefault();next();}
 });
+const DATA={};
 (async function boot(){
   try{
-    const [w,v]=await Promise.all([
-      fetch("data/words.json").then(r=>r.json()),
-      fetch("data/verbs.json").then(r=>r.json())
-    ]);
-    WORDS=w;VERBS=v;
+    const files=["words","verbs","phrasal","expressions","sentences"];
+    const loaded=await Promise.all(files.map(f=>fetch("data/"+f+".json").then(r=>r.json())));
+    files.forEach((f,i)=>DATA[f]=loaded[i]);
+    WORDS=DATA.words;VERBS=DATA.verbs;
   }catch(e){
     console.error(e);
     $("#subline").textContent="Impossible de charger les mots — lance un serveur HTTP (voir CLAUDE.md), pas en file://.";
