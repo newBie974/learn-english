@@ -21,8 +21,10 @@ Page unique, statique, déployable telle quelle sur **GitHub Pages**. Aucune ét
   - `pos` — nature (`verbe`, `nom`, `préposition`, `article`, `pronom`, `adjectif`…).
   - `src` — `main` = vérifié à la main ; `auto` = généré (affiche un petit badge en carte).
   - `lvl` — palier **1 à 6** : 500 mots par palier (1 = les 500 premiers, …, 6 = 2501→3000).
-- `data/verbs.json` — **le deck bonus** des verbes irréguliers au passé. Chaque entrée :
-  `{ en, fr }` où `fr` est la forme passée + glose, ex. `"went — aller (passé)"`.
+- `data/verbs.json` — **le deck des verbes irréguliers** (liste exhaustive, ~170). Chaque
+  entrée : `{ en, fr, tr }` où `en` est l'infinitif (la question), `fr` = `"prétérit ·
+  participe passé"` (la réponse à apprendre, ex. `"went · gone"`), `tr` = le sens français
+  (indice, ex. `"aller"`).
 
 Tout le reste (`index.html`) ne fait que **lire** ces deux fichiers. Pour ajouter ou corriger
 des mots, on édite ces JSON — jamais le HTML.
@@ -31,7 +33,8 @@ des mots, on édite ces JSON — jamais le HTML.
 
 `index.html` construit les decks au démarrage (`buildDecks()`) :
 - 6 **paliers** = `words.json` filtré par `lvl` (1→6), 500 mots chacun.
-- 1 deck **Verbes au passé** = `verbs.json`.
+- 1 deck **Verbes irréguliers** = `verbs.json` (question = infinitif, réponse = prétérit ·
+  participe passé, indice = sens FR).
 
 Les `id` sont les mots eux-mêmes (`w.en`), préfixés `verb_` pour les verbes. Le scoring de
 mémorisation se fait **par `id`** dans le `localStorage`.

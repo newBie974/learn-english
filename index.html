@@ -128,7 +128,7 @@ VERBS.forEach(v=>{v.id="verb_"+v.en;v.pos="verbe";v.verb=true;});
 BYID={}; WORDS.forEach(w=>BYID[w.id]=w); VERBS.forEach(v=>BYID[v.id]=v);
 const PALIERS=[];
 for(let l=1;l<=6;l++){PALIERS.push({id:"p"+l,label:l,name:"Palier "+l,sub:(l*500-499)+" → "+(l*500)+" e mot",words:WORDS.filter(w=>w.lvl===l)});}
-DECKS=[...PALIERS,{id:"verbs",label:"⏪",name:"Verbes au passé",sub:"bonus — verbes irréguliers",words:VERBS,verb:true}];
+DECKS=[...PALIERS,{id:"verbs",label:"⏪",name:"Verbes irréguliers",sub:"les "+VERBS.length+" verbes · prétérit & participe passé",words:VERBS,verb:true}];
 }
 
 const store=(()=>{let mem={},ok=true;try{localStorage.setItem("__t","1");localStorage.removeItem("__t");}catch(e){ok=false;}
@@ -188,10 +188,11 @@ function next(){
   if(!queue.length){finish();return;}
   answered=false;
   const w=BYID[queue[0]];
-  $("#frontTag").textContent=w.verb?"Verbe — au passé ?":"Anglais";
+  $("#frontTag").textContent=w.verb?"Verbe irrégulier":"Anglais";
   $("#frontWord").textContent=w.en;
-  $("#frontPos").textContent=w.pos&&w.pos!=="autre"?w.pos:"";
-  $("#frontHint").textContent=w.verb?"Sa forme au passé ?":"Quelle est la traduction ?";
+  const posTxt=w.verb?"":(w.pos&&w.pos!=="autre"?w.pos:"");
+  $("#frontPos").textContent=posTxt;$("#frontPos").classList.toggle("hidden",!posTxt);
+  $("#frontHint").textContent=w.verb?((w.tr?w.tr+" — ":"")+"prétérit · participe passé ?"):"Quelle est la traduction ?";
   const opts=shuffle([w.fr,...distractors(w)]);
   const box=$("#choices");box.innerHTML="";box.classList.remove("locked");
   opts.forEach((tr,i)=>{
