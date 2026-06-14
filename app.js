@@ -7,6 +7,7 @@ const DECK_DEFS=[
   {id:"verbs", data:"verbs", label:"⏪", name:"Verbes irréguliers", rubrique:"Grammaire", type:"qcm", kind:"verb", tag:"Verbe irrégulier", sub:d=>"les "+d.words.length+" verbes · prétérit & participe passé"},
   {id:"phrasal", data:"phrasal", label:"🧩", name:"Phrasal verbs", rubrique:"Grammaire", type:"qcm", kind:"phrasal", tag:"Phrasal verb", sub:d=>d.words.length+" verbes à particule"},
   {id:"expr", data:"expressions", label:"💬", name:"Expressions", rubrique:"Grammaire", type:"qcm", kind:"expr", tag:"Expression", sub:d=>d.words.length+" expressions courantes"},
+  {id:"cloze", data:"sentences", label:"✍️", name:"Compléter des phrases", rubrique:"S'entraîner", type:"cloze", kind:"cloze", sub:d=>d.words.length+" phrases à trous"},
 ];
 
 function deckIdFor(kind,w){
@@ -53,7 +54,7 @@ const deckSeen=d=>d.words.filter(w=>isSeen(w.id)).length;
 
 let queue=[],session={};let answered=false;
 const $=s=>document.querySelector(s);
-const screens={home:$("#home"),study:$("#study"),done:$("#done"),guide:$("#guide")};
+const screens={home:$("#home"),study:$("#study"),cloze:$("#cloze"),done:$("#done"),guide:$("#guide")};
 const show=n=>Object.entries(screens).forEach(([k,el])=>el.classList.toggle("hidden",k!==n));
 
 function renderHome(){
@@ -87,7 +88,7 @@ function startDeck(d){
   if(!queue.length)queue=d.words.slice(0,NEW).map(w=>w.id);
   begin();
 }
-function begin(){session={seen:new Set(),known:0,total:queue.length};if(!queue.length){renderHome();return;}show("study");next();}
+function begin(){session={seen:new Set(),known:0,total:queue.length};if(!queue.length){renderHome();return;}next();}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function distractors(w){
   const pool=DECK_BY_ID[w.deckId].words,seen=new Set([w.fr]),out=[];
@@ -98,9 +99,11 @@ function distractors(w){
 }
 function next(){
   if(!queue.length){finish();return;}
+  const item=BYID[queue[0]];
+  if(DECK_BY_ID[item.deckId].type==="cloze"){window.clozeShow(item);return;}
+  show("study");
   answered=false;
-  const w=BYID[queue[0]];
-  const deck=DECK_BY_ID[w.deckId];
+  const w=item,deck=DECK_BY_ID[w.deckId];
   $("#frontTag").textContent=w.kind==="verb"?"Verbe irrégulier":(deck.tag||"Anglais");
   $("#frontWord").textContent=w.en;
   const posTxt=w.kind==="word"&&w.pos&&w.pos!=="autre"?w.pos:"";
@@ -115,9 +118,7 @@ function next(){
     b.onclick=()=>choose(b,tr,w);box.appendChild(b);
   });
   $("#continueBtn").classList.add("hidden");
-  const done=session.total-queue.length;
-  $("#progressBar").style.width=Math.round(done/session.total*100)+"%";
-  $("#remain").textContent=queue.length+" restant"+(queue.length>1?"s":"");
+  setProgress("#progressBar","#remain");
 }
 function choose(btn,tr,w){
   if(answered)return;answered=true;
@@ -156,6 +157,16 @@ document.addEventListener("keydown",e=>{
   if(!answered){const n=parseInt(e.key,10);if(n>=1&&n<=3){e.preventDefault();const b=$("#choices").children[n-1];if(b)b.click();}return;}
   if(e.code==="Enter"||e.code==="Space"){e.preventDefault();next();}
 });
+function setProgress(barSel,remSel){
+  const done=session.total-queue.length;
+  $(barSel).style.width=Math.round(done/session.total*100)+"%";
+  $(remSel).textContent=queue.length+" restant"+(queue.length>1?"s":"");
+}
+window.App={
+  show, shuffle, grade, next, save,
+  home:renderHome, setProgress,
+  answered:()=>answered, setAnswered:v=>{answered=v;},
+};
 const DATA={};
 (async function boot(){
   try{
