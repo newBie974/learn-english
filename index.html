@@ -75,6 +75,11 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
 .choice.wrong{background:var(--again-soft);border-color:var(--again);color:#B24A36}.choice.wrong .num{background:var(--again);color:#fff}
 .choice.dim{opacity:.4}
 .cta.continue{margin-top:14px}
+.sentence{font-family:Fraunces,serif;font-weight:600;font-size:clamp(20px,5.5vw,26px);line-height:1.5;color:var(--ink);max-width:380px}
+.blank{display:inline-block;min-width:64px;border-bottom:2px dashed var(--primary);color:var(--primary);text-align:center;padding:0 6px;margin:0 2px}
+.blank.correct{border-color:var(--known);color:#13745F}
+.blank.wrong{border-color:var(--again);color:#B24A36}
+#clozeTr{margin-top:14px;font-style:italic}
 </style></head>
 <body><div class="app">
 <div class="topbar"><div class="brand"><span class="dot">a</span><span>Mes mots d'anglais<small>3000 mots, un peu chaque jour</small></span></div>
@@ -92,6 +97,17 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
   <div class="stage"><div class="qcard"><span class="tag" id="frontTag">Anglais</span><span class="pos" id="frontPos"></span><div class="word" id="frontWord">—</div><div class="hint" id="frontHint">Quelle est la traduction ?</div></div></div>
   <div class="choices" id="choices"></div>
   <button class="cta continue hidden" id="continueBtn">Continuer<span class="count">→</span></button>
+</div>
+
+<div id="cloze" class="screen hidden">
+  <div class="study-top"><button class="ghost-btn" id="clozeQuit">← Quitter</button><div class="progress"><i id="clozeBar" style="width:0%"></i></div><span class="remain" id="clozeRemain">0</span></div>
+  <div class="stage"><div class="qcard">
+    <span class="tag">Complète la phrase</span>
+    <div class="sentence" id="clozeSentence">—</div>
+    <div class="hint" id="clozeTr"></div>
+  </div></div>
+  <div class="choices" id="clozeOptions"></div>
+  <button class="cta continue hidden" id="clozeContinue">Continuer<span class="count">→</span></button>
 </div>
 
 <div id="done" class="screen hidden"><div class="done"><div class="big" id="doneEmoji">🌱</div><h2 id="doneTitle">Bien joué !</h2><p id="doneText"></p>
@@ -116,4 +132,5 @@ padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-
 </div></div>
 </div>
 <script src="app.js"></script>
+<script src="cloze.js"></script>
 </body></html>
