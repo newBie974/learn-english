@@ -54,7 +54,7 @@ const deckSeen=d=>d.words.filter(w=>isSeen(w.id)).length;
 
 let queue=[],session={};let answered=false;
 const $=s=>document.querySelector(s);
-const screens={home:$("#home"),study:$("#study"),cloze:$("#cloze"),done:$("#done"),guide:$("#guide")};
+const screens={home:$("#home"),study:$("#study"),cloze:$("#cloze"),done:$("#done"),guide:$("#guide"),browse:$("#browse")};
 const show=n=>Object.entries(screens).forEach(([k,el])=>el.classList.toggle("hidden",k!==n));
 
 function renderHome(){
@@ -152,6 +152,7 @@ $("#continueBtn").onclick=next;
 $("#doneHome").onclick=renderHome;
 $("#navBtn").onclick=()=>show("guide");
 $("#guideBack").onclick=renderHome;
+$("#browseBtn").onclick=()=>window.browseShow();
 document.addEventListener("keydown",e=>{
   if(screens.study.classList.contains("hidden"))return;
   if(!answered){const n=parseInt(e.key,10);if(n>=1&&n<=3){e.preventDefault();const b=$("#choices").children[n-1];if(b)b.click();}return;}
@@ -166,6 +167,7 @@ window.App={
   show, shuffle, grade, next, save,
   home:renderHome, setProgress,
   answered:()=>answered, setAnswered:v=>{answered=v;},
+  words:()=>WORDS, verbs:()=>VERBS,
 };
 const DATA={};
 (async function boot(){
